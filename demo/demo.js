@@ -304,6 +304,7 @@ AFRAME.registerComponent('draggable-body', {
 window.addEventListener('DOMContentLoaded', (ev) => {
 
     let models = [
+        { name: 'Shogeko', src: 'assets/Shogeko/Shogeko.vrm' },
         { name: 'AliciaSolid', src: 'assets/AliciaSolid/AliciaSolid.vrm' },
         { name: 'AliciaSolid_mmd', src: 'assets/AliciaSolid/AliciaSolid_mmd.vrm' },
         { name: '千駄ヶ谷 渋', src: 'assets/VRoid/8801565727279527051.vrm' },
