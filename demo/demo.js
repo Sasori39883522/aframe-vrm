@@ -300,6 +300,17 @@ AFRAME.registerComponent('draggable-body', {
     }
 });
 
+AFRAME.registerComponent('change-expression', {
+    dependencies: ['vrm'],
+    schema: {
+        blendShape: { type: 'string', default: 'SORROW' }
+    },
+    init() {
+        const self = this;
+        self.el.vrm.setBlendShapeWeight(self.blendShape, 1);
+    }
+});
+
 
 window.addEventListener('DOMContentLoaded', (ev) => {
 
@@ -424,6 +435,4 @@ window.addEventListener('DOMContentLoaded', (ev) => {
             }
         }
     });
-
-    vrm2El.vrm.setBlendShapeWeight('SORROW', 1);
 }, { once: true });
