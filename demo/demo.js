@@ -307,7 +307,9 @@ AFRAME.registerComponent('change-expression', {
     },
     init() {
         const self = this;
-        self.el.vrm.setBlendShapeWeight(self.blendShape, 1);
+        self.addEventListener('model-loaded', ev => {
+            self.el.components.vrm.avatar.setBlendShapeWeight(self.blendShape, 1);
+        });
     }
 });
 
