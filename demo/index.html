@@ -21,6 +21,7 @@
     <!-- VRM avatar -->
     <!-- <a-entity id="avatar" vrm="src:assets/AliciaSolid/AliciaSolid.vrm;lookAt:a-camera" vrm-anim="" rotation="0 180 0"></a-entity> -->
     <a-entity id="avatar" vrm="src:assets/Shogeko/Shogeko.vrm;lookAt:a-camera" vrm-anim="" rotation="0 180 0"></a-entity>
+    <a-entity id="avatar2" vrm="src:assets/Shogeko/Shogeko.vrm;lookAt:a-camera" vrm-anim="" position="1 0 0" rotation="0 180 0"></a-entity>
 
     <a-entity id="env">
       <a-plane id='ground' wireframe='true' width='10' height='10' segments-height='10' segments-width='10' rotation='90 0 0'></a-plane>
@@ -73,7 +74,7 @@
       </a-xywindow>
 
       <!-- Blend shape panel -->
-      <a-xywindow position="7 3 -9" title="BlendShape" width="3" height="4" pose-editor-window window-locator
+      <a-xywindow position="7 3 -9" title="BlendShape" width="3" height="4" pose-editor-window="vrm: #avatar" window-locator
         xycontainer="direction:column;alignItems:stretch;">
         <a-xycontainer height="0.5" direction="row" align-items="stretch" justify-items="stretch" spacing="0.05">
           <a-xybutton name="reset-all-morph" label="ResetAll" height=0.5></a-xybutton>

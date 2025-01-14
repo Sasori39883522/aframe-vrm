@@ -317,6 +317,7 @@ window.addEventListener('DOMContentLoaded', (ev) => {
         'assets/bvhfiles/la_bvh_sample03.bvh'
     ];
     let vrmEl = document.getElementById('avatar');
+    let vrm2El = document.getElementById('avatar2');
     let listEl = document.getElementById('model-list');
     let list = listEl.components.xylist;
     list.setAdapter({
@@ -423,4 +424,6 @@ window.addEventListener('DOMContentLoaded', (ev) => {
             }
         }
     });
+
+    vrm2El.vrm.setBlendShapeWeight('SORROW', 1);
 }, { once: true });
