@@ -1,4 +1,5 @@
 import { VRMAvatar } from "./avatar" // TODO: remove circular dependency
+import { THREE } from '../aframe';
 
 export class VRMBlendShapeUtil {
     private readonly _avatar: VRMAvatar;

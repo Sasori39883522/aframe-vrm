@@ -4,18 +4,40 @@ import { VRMPhysicsCannonJS } from "./utils/physics-cannon";
 import { IKNode, IKSolver } from "./utils/simpleik";
 import { VMDLoaderWrapper } from "./utils/vmd";
 import { BVHLoaderWrapper } from "./utils/bvh";
+import { AFRAME } from "./aframe";
+
+// const AFRAME = globalThis.AFRAME;
 
 AFRAME.registerComponent('vrm', {
     schema: {
-        src: { default: '' },
+        src: { type: 'selector', default: '' },
         firstPerson: { default: false },
         blink: { default: true },
         blinkInterval: { default: 5 },
         lookAt: { type: 'selector' },
         enablePhysics: { default: false },
+        cached: { default: false }
     },
     init() {
         this.avatar = null;
+        if (window.Worker) {
+            try {
+                // const worker = new Worker("./workers/vrm-worker.js", { type: "module" });
+                const worker = new Worker("./workers/vrm-worker.js");
+                worker.onmessage = (e) => {
+                    this._getAvatarFromWorker(e);
+                };
+                worker.onmessageerror = (e) => {
+                    this._getErrorFromWorker(e);
+                };
+                worker.onerror = (e) => {
+                    console.log(e);
+                };
+                this.worker = worker;
+            } catch (e) {
+                console.log(e);
+            }
+        }
     },
     update(oldData) {
         if (this.data.src !== oldData.src) {
@@ -39,8 +61,10 @@ AFRAME.registerComponent('vrm', {
     },
     async _loadAvatar() {
         let el = this.el;
-        let url = this.data.src;
-        if (!url) {
+        let data = this.data.src?.data;
+        let path = this.data.src?.getAttribute('src');
+        let id = this.data.src?.getAttribute('id');
+        if (!data) {
             return;
         }
         try {
@@ -48,8 +72,17 @@ AFRAME.registerComponent('vrm', {
             if (globalThis.CANNON) {
                 moduleSpecs.push({ name: 'physics', instantiate: (a, ctx) => new VRMPhysicsCannonJS(ctx) });
             }
-            let avatar = await new VRMLoader().load(url, moduleSpecs);
-            if (url != this.data.src) {
+
+            /** @type {Worker} */
+            const worker = this.worker;
+            if (worker) {
+                worker.postMessage([data, path, []]);
+                return;
+            }
+
+            let avatar;
+            avatar = await new VRMLoader().parse(data, path, moduleSpecs);
+            if (data != this.data.src?.data) {
                 avatar.dispose();
                 return;
             }
@@ -59,8 +92,25 @@ AFRAME.registerComponent('vrm', {
             this.play();
             el.emit('model-loaded', { format: 'vrm', model: avatar.model, avatar: avatar }, false);
         } catch (e) {
-            el.emit('model-error', { format: 'vrm', src: url, cause: e }, false);
+            el.emit('model-error', { format: 'vrm', src: path, cause: e }, false);
+            console.log(e);
         }
+    },
+    _getAvatarFromWorker(e) {
+        let el = this.el;
+        /** @type {VRMAvatar} */
+        const avatar = e.data;
+        el.setObject3D('avatar', avatar.model);
+        this.avatar = avatar;
+        this._updateAvatar();
+        this.play();
+        el.emit('model-loaded', { format: 'vrm', model: avatar.model, avatar: avatar }, false);
+    },
+    _getErrorFromWorker(e) {
+        let el = this.el;
+        let path = this.data.src?.getAttribute('src');
+        el.emit('model-error', { format: 'vrm', src: path, cause: e }, false);
+        console.log(e);
     },
     _updateAvatar() {
         if (!this.avatar) {

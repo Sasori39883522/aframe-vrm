@@ -1,3 +1,4 @@
+import { THREE } from '../aframe';
 import { VRMAvatar } from '../vrm/avatar';
 
 export class BVHLoaderWrapper {

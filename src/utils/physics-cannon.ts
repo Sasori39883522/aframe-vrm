@@ -1,3 +1,5 @@
+import { THREE } from '../aframe';
+
 export class VRMPhysicsCannonJS implements VRMModule {
     collisionGroup = 2;
     enable = false;

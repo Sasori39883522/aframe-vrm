@@ -1,3 +1,4 @@
+import { THREE } from '../aframe';
 
 export class IKNode {
     position: THREE.Vector3;

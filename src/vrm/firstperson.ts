@@ -1,3 +1,4 @@
+import { THREE } from '../aframe';
 
 export class FirstPersonMeshUtil {
     private readonly _firstPersonBone: THREE.Bone;

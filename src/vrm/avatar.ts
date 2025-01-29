@@ -1,7 +1,8 @@
 import { VRMLookAt } from "./lookat"
 import { VRMBlendShapeUtil } from "./blendshape"
 import { FirstPersonMeshUtil } from "./firstperson"
-import { GLTFLoader, GLTF } from "three/examples/jsm/loaders/GLTFLoader" // type only
+// import { GLTFLoader, GLTF } from "three/examples/jsm/loaders/GLTFLoader" // type only
+import { THREE } from '../aframe';
 
 export type PoseData = { bones: any[], blendShape?: any[] }
 export class VRMLoader {
@@ -13,6 +14,16 @@ export class VRMLoader {
     public async load(url: string, moduleSpecs: ModuleSpec[] = []): Promise<VRMAvatar> {
         return new Promise((resolve, reject) => {
             this.gltfLoader.load(url, async (gltf) => {
+                resolve(await new VRMAvatar(gltf).init(gltf, moduleSpecs));
+            }, undefined, reject);
+        });
+    }
+
+    public async parse(data: ArrayBuffer | string, path: string, moduleSpecs: ModuleSpec[] = []): Promise<VRMAvatar> {
+        return new Promise((resolve, reject) => {
+            let starttime = Date.now();
+            this.gltfLoader.parse(data, path, async (gltf) => {
+                console.log(`gltf parsed, duration: ${Date.now() - starttime} ms`);
                 resolve(await new VRMAvatar(gltf).init(gltf, moduleSpecs));
             }, undefined, reject);
         });
@@ -213,3 +224,24 @@ export class VRMAvatar {
         }
     }
 }
+
+class VRMCache {
+    protected cache: Map<string, VRMAvatar> = new Map<string, VRMAvatar>();
+
+    init() {
+        const assets = document.querySelectorAll('a-asset-item[vrm]').forEach((i: any) => {
+            this.loadAvatar(i);
+        })
+    }
+
+    async loadAvatar(el: HTMLElement & {data: any}) {
+        let data = el.data;
+        let path = el.getAttribute('src') ?? '';
+        let id = el.getAttribute('id');
+        const avatar = await new VRMLoader().parse(data, path);
+        this.cache.set('id', avatar);
+        
+    }
+}
+
+export const vrmCache = new VRMCache;

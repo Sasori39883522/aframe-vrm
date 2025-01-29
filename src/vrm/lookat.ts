@@ -1,3 +1,5 @@
+import { THREE } from '../aframe';
+
 export class VRMLookAt implements VRMModule {
     public target: THREE.Object3D | null = null;
     public angleLimit: number = 60 * Math.PI / 180;
