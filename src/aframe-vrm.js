@@ -7,15 +7,18 @@ import { BVHLoaderWrapper } from "./utils/bvh";
 
 AFRAME.registerComponent('vrm', {
     schema: {
-        src: { default: '' },
+        src: { type: 'selector', default: '' },
         firstPerson: { default: false },
         blink: { default: true },
         blinkInterval: { default: 5 },
         lookAt: { type: 'selector' },
         enablePhysics: { default: false },
+        cached: { default: false }
     },
     init() {
         this.avatar = null;
+        if (this.data.cached) {
+        }
     },
     update(oldData) {
         if (this.data.src !== oldData.src) {
@@ -39,8 +42,10 @@ AFRAME.registerComponent('vrm', {
     },
     async _loadAvatar() {
         let el = this.el;
-        let url = this.data.src;
-        if (!url) {
+        let data = this.data.src?.data;
+        let path = this.data.src?.getAttribute('src');
+        let id = this.data.src?.getAttribute('id');
+        if (!data) {
             return;
         }
         try {
@@ -48,10 +53,14 @@ AFRAME.registerComponent('vrm', {
             if (globalThis.CANNON) {
                 moduleSpecs.push({ name: 'physics', instantiate: (a, ctx) => new VRMPhysicsCannonJS(ctx) });
             }
-            let avatar = await new VRMLoader().load(url, moduleSpecs);
-            if (url != this.data.src) {
-                avatar.dispose();
-                return;
+            let avatar = THREE.Cache.get(`vrmCache-${id}`);
+            if (!avatar) {
+                avatar = await new VRMLoader().parse(data, path, moduleSpecs);
+                if (data != this.data.src?.data) {
+                    avatar.dispose();
+                    return;
+                }
+                THREE.Cache.add(`vrmCache-${id}`, avatar);
             }
             this.avatar = avatar;
             el.setObject3D('avatar', avatar.model);
@@ -59,7 +68,8 @@ AFRAME.registerComponent('vrm', {
             this.play();
             el.emit('model-loaded', { format: 'vrm', model: avatar.model, avatar: avatar }, false);
         } catch (e) {
-            el.emit('model-error', { format: 'vrm', src: url, cause: e }, false);
+            el.emit('model-error', { format: 'vrm', src: path, cause: e }, false);
+            console.log(e);
         }
     },
     _updateAvatar() {

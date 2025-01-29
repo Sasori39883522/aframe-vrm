@@ -113,7 +113,7 @@ AFRAME.registerComponent('pose-editor-window', {
         this.remove();
         this.vrmEl = this.data.vrm;
         this.vrmEl.addEventListener('model-loaded', this.onModelLoaded);
-        if (this.vrmEl.components.vrm.avatar) {
+        if (this.vrmEl?.components?.vrm?.avatar) {
             this.updateAvatar(this.vrmEl.components.vrm.avatar);
         }
     },
@@ -303,16 +303,70 @@ AFRAME.registerComponent('draggable-body', {
 AFRAME.registerComponent('change-expression', {
     dependencies: ['vrm'],
     schema: {
-        blendShape: { type: 'string', default: 'SORROW' }
+        blendShape: { type: 'string', default: 'SORROW' },
+        enabled: { type: 'boolean', default: true }
     },
     init() {
         const self = this;
-        self.addEventListener('model-loaded', ev => {
-            self.el.components.vrm.avatar.setBlendShapeWeight(self.blendShape, 1);
+        self.el.addEventListener('model-loaded', ev => {
+            if (self.data.enabled) {
+                self.el.components.vrm.avatar.setBlendShapeWeight(self.data.blendShape, 1);
+            }
         });
     }
 });
 
+AFRAME.registerComponent('avatar-holder', {
+    init() {
+        const self = this;
+        const rows = 1;
+        const cols = 6;
+        const select = Math.floor(Math.random() * rows * cols);
+        let current = 0;
+        for (let j = 0; j < rows; j++) {
+            for (let i = 0; i < cols; i++) {
+                const avatar = document.createElement('a-entity');
+                avatar.classList.add('collidable');
+                avatar.setAttribute('mixin', 'shogeko-mixin');
+                avatar.setAttribute('position', `${i - cols / 2} 0 ${0 - j}`);
+                // avatar.setAttribute('rotation', `0 180 0`);
+                // avatar.setAttribute('vrm', 'src:assets/Shogeko/Shogeko.vrm;lookAt:a-camera');
+                // avatar.setAttribute('vrm-anim', "");
+                // console.log(`expression ${select === current}`);
+                avatar.setAttribute('change-expression', `enabled:${select === current}`);
+                avatar.addEventListener('click', ev => {
+                    const ce = ev.target.getAttribute('change-expression').enabled;
+                    console.log(ce);
+                    if (ce) {
+                        console.log('correct');
+                        alert('Correct!')
+                    } else {
+                        console.log('incorrect');
+                        alert('Zenzen daijobu da yo!');
+                    }
+                })
+                self.el.appendChild(avatar);
+                current ++;
+            }
+        }
+    }
+});
+
+AFRAME.registerState({
+    initialState: {
+        score: 0
+    },
+
+    handlers: {
+        decreaseScore: function (state, action) {
+            state.score -= action.points;
+        },
+
+        increaseScore: function (state, action) {
+            state.score += action.points;
+        }
+    }
+});
 
 window.addEventListener('DOMContentLoaded', (ev) => {
 
@@ -330,8 +384,8 @@ window.addEventListener('DOMContentLoaded', (ev) => {
         'assets/bvhfiles/la_bvh_sample03.bvh'
     ];
     let vrmEl = document.getElementById('avatar');
-    let vrm2El = document.getElementById('avatar2');
-    let listEl = document.getElementById('model-list');
+    // let vrm2El = document.getElementById('avatar2');
+    let listEl = document.querySelector('#model-list');
     let list = listEl.components.xylist;
     list.setAdapter({
         create(parent) {

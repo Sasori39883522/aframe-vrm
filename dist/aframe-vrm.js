@@ -200,6 +200,15 @@
         }, void 0, reject);
       });
     }
+    async parse(data, path, moduleSpecs = []) {
+      return new Promise((resolve, reject) => {
+        let starttime = Date.now();
+        this.gltfLoader.parse(data, path, async (gltf) => {
+          console.log(`gltf parsed, duration: ${Date.now() - starttime} ms`);
+          resolve(await new VRMAvatar(gltf).init(gltf, moduleSpecs));
+        }, void 0, reject);
+      });
+    }
   };
   var VRMAvatar = class {
     constructor(gltf) {
@@ -375,6 +384,25 @@
       }
     }
   };
+  var VRMCache = class {
+    constructor() {
+      this.cache = new Map();
+    }
+    init() {
+      const assets = document.querySelectorAll("a-asset-item[vrm]").forEach((i) => {
+        this.loadAvatar(i);
+      });
+    }
+    async loadAvatar(el) {
+      var _a;
+      let data = el.data;
+      let path = (_a = el.getAttribute("src")) != null ? _a : "";
+      let id = el.getAttribute("id");
+      const avatar = await new VRMLoader().parse(data, path);
+      this.cache.set("id", avatar);
+    }
+  };
+  var vrmCache = new VRMCache();
 
   // src/utils/physics-cannon.ts
   var VRMPhysicsCannonJS = class {
@@ -922,15 +950,18 @@
   // src/aframe-vrm.js
   AFRAME.registerComponent("vrm", {
     schema: {
-      src: { default: "" },
+      src: { type: "selector", default: "" },
       firstPerson: { default: false },
       blink: { default: true },
       blinkInterval: { default: 5 },
       lookAt: { type: "selector" },
-      enablePhysics: { default: false }
+      enablePhysics: { default: false },
+      cached: { default: false }
     },
     init() {
       this.avatar = null;
+      if (this.data.cached) {
+      }
     },
     update(oldData) {
       if (this.data.src !== oldData.src) {
@@ -953,9 +984,12 @@
       }
     },
     async _loadAvatar() {
+      var _a, _b, _c, _d;
       let el = this.el;
-      let url = this.data.src;
-      if (!url) {
+      let data = (_a = this.data.src) == null ? void 0 : _a.data;
+      let path = (_b = this.data.src) == null ? void 0 : _b.getAttribute("src");
+      let id = (_c = this.data.src) == null ? void 0 : _c.getAttribute("id");
+      if (!data) {
         return;
       }
       try {
@@ -963,10 +997,14 @@
         if (globalThis.CANNON) {
           moduleSpecs.push({ name: "physics", instantiate: (a, ctx) => new VRMPhysicsCannonJS(ctx) });
         }
-        let avatar = await new VRMLoader().load(url, moduleSpecs);
-        if (url != this.data.src) {
-          avatar.dispose();
-          return;
+        let avatar = THREE.Cache.get(`vrmCache-${id}`);
+        if (!avatar) {
+          avatar = await new VRMLoader().parse(data, path, moduleSpecs);
+          if (data != ((_d = this.data.src) == null ? void 0 : _d.data)) {
+            avatar.dispose();
+            return;
+          }
+          THREE.Cache.add(`vrmCache-${id}`, avatar);
         }
         this.avatar = avatar;
         el.setObject3D("avatar", avatar.model);
@@ -974,7 +1012,8 @@
         this.play();
         el.emit("model-loaded", { format: "vrm", model: avatar.model, avatar }, false);
       } catch (e) {
-        el.emit("model-error", { format: "vrm", src: url, cause: e }, false);
+        el.emit("model-error", { format: "vrm", src: path, cause: e }, false);
+        console.log(e);
       }
     },
     _updateAvatar() {
